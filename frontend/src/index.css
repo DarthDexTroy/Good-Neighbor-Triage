@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { height: 100%; }
+.leaflet-container { background: #0b1220; font-family: inherit; }
+/* Dark map from free OSM tiles: invert + rotate hue back so water stays blue-ish */
+.dark-tiles { filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.6); }
+.leaflet-tooltip { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; }
+.leaflet-tooltip-top:before { border-top-color: #334155; }
+.scroll-thin::-webkit-scrollbar { width: 6px; }
+.scroll-thin::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+@keyframes flash { 0% { background-color: rgba(227, 24, 55, .45); } 100% { background-color: transparent; } }
+.flash { animation: flash 2.5s ease-out; }
+@keyframes pulse-border { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .25; } }
+.pulse-block { animation: pulse-border 1.2s ease-in-out infinite; }
