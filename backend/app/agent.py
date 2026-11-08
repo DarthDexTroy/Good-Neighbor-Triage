@@ -125,6 +125,8 @@ class Toolbox:
 
     def t_send_reply(self, household_id, text):
         h = db.get("households", household_id)
+        if not text.lstrip().lower().startswith("good neighbor"):
+            text = ("Good Neighbor: " if h.get("language") == "es" else "Good Neighbor here: ") + text.lstrip()
         via = messenger.deliver(h, text[:480])
         return {"sent": True, "via": via}
 

@@ -33,25 +33,15 @@ backend/.venv/bin/python -m pytest -q backend                       # 18 tests
 
 ## What's broken / not done
 
-- **#1 Sponsor check: code ready, waiting on keys.** There's no `backend/.env` yet. The demo runs on the rules fallback and the phone simulator (the badges say so).
-  - **Photon 2.0 is wired** against the beta REST API (`https://api.photon.codes/v1`, docs at photon.codes/docs/beta):
-    - **Inbound:** a poller in `app/photon.py` reads received iMessages every 2 s, so no tunnel is needed.
-    - **Outbound:** `messenger.PhotonMessenger.send` posts to `POST /v1/projects/{id}/messages`.
-    - Unit-tested with a sample message. **Not tested against the live API.**
-  - **We're on Photon stable (Spectrum, app.photon.codes).** Project `good-neighbor` exists. Spectrum is a TypeScript SDK, so `photon-bridge/` (Node, `npm start`) connects it to the Python backend:
-    - inbound iMessage → `POST /api/photon/inbound`
-    - backend sends → `POST localhost:8787/send` → the person's conversation
-    - Setup: put `SPECTRUM_PROJECT_SECRET` in `photon-bridge/.env`; `backend/.env` needs `PHOTON_BRIDGE_URL=http://localhost:8787` and `DEMO_FAMILY_PHONE`.
-    - Photon also needs a phone on the account (avatar menu).
-    - Bridge health check: `curl localhost:8787/health`
-  - **Alternative: Photon 2.0 beta REST** (only if we switch dashboards):
-    1. Sign up at app.beta.photon.codes (free month, per the HackUTD credits page).
-    2. Create a project and an API key with `project:read` + `project:write`.
-    3. In the iMessage section, add your iPhone number and assign a shared line.
-    4. In `backend/.env`, set `PHOTON_API_KEY`, `PHOTON_PROJECT_ID` and `DEMO_FAMILY_PHONE=<your iPhone>`. That makes the Reyes family your phone.
-    5. Restart the backend and run `backend/.venv/bin/python backend/scripts/photon_check.py`.
-  - **Photon limit:** a shared line **cannot text first**. Before the demo, text **"hola"** to the agent number from your phone. Before landfall, that just gets a "you're set" reply (no triage). After that, every text reaches your phone.
-  - **Nemotron:** put a free key from build.nvidia.com in `backend/.env` as `NVIDIA_API_KEY`, run `backend/.venv/bin/python backend/scripts/nemotron_check.py` to list models, set `NEMOTRON_MODEL`, then run it with `--run`.
+- **#1 Sponsor check: DONE, both live (verified 2026-11-08).**
+  - **Nemotron:** `nvidia/nemotron-3.5-super-vl-120b-a12b`, thinking off. `scripts/nemotron_check.py --run` passes: the model ran the whole tool loop (lookup → hazard → needs → score → shelter → reply). Replies are forced to start with "Good Neighbor".
+  - **Photon 2.0 beta:**
+    - Project `good-neighbor`; shared iMessage line **+1 (628) 263-4622**.
+    - `app/photon.py` polls received messages; `PhotonMessenger.send` replies into the person's space.
+    - Round trip verified with a real iPhone.
+    - `DEMO_FAMILY_PHONE` makes that phone the Reyes family.
+  - **Before each demo:** restart the backend, then iMessage "hola" from the demo phone to +1 (628) 263-4622. The backend only reads messages sent after it starts, and a shared line can't text first.
+  - Keys live in `backend/.env` (git-ignored). `photon-bridge/` (Spectrum) is an unused alternative.
 - **Data change to know about:** Rosa Reyes also uses a walker (`mobility`). Without it the family scored 85 and ranked #3–4 behind other simulated households. With it they score 95 and rank #1.
 - **Timing caveat (During):** the silent Jenkins couple keeps gaining points and passes the Reyes family at about T+2h30m, roughly 2.5 real minutes after you click During. **Send the Spanish text within about 90 s of opening During.** (Jenkins going to the top later is the "no one overlooked" story.)
 - `shelters.py` still isn't mounted in `main.py`. Not on the build list.
