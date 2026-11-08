@@ -6,6 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 LOG=/tmp/lifeline-tunnel.log
 pkill -f "cloudflared tunnel --no-autoupdate --url http://localhost:8000" 2>/dev/null || true
+# Restart the backend with: kill $(lsof -ti tcp:8000 -sTCP:LISTEN). A plain "lsof -ti:8000" also matches (and kills) this tunnel.
 nohup cloudflared tunnel --no-autoupdate --url http://localhost:8000 > "$LOG" 2>&1 &
 URL=""
 for _ in $(seq 1 30); do
