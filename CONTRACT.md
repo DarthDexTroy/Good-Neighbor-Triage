@@ -57,3 +57,11 @@ app.include_router(shelters.router)
 `messenger.deliver(household, text)`, `services.audit(actor, action, case_id)`, `clock.now()`,
 `scoring.effective_needs(household, case)`, `db.get / put / all_docs`.
 If any of these get renamed, tell the other person.
+
+## Before / After endpoints (added 2026-11-08, implemented in `backend/app/business.py`)
+
+See STATUS.md, "New endpoints", for the shapes. Summary: `POST /api/phase`, `GET /api/exposure`,
+`POST /api/before/send_actions`, `GET /api/before/actions`, `GET /api/recovery/claims`,
+`POST /api/claims/{id}/autopay`, `POST /api/recovery/run_autopay`, `GET /api/contractors`,
+`POST /api/recovery/warn_scams`, `GET /api/scorecard`, `GET /api/thread?phone=`.
+Not built: `GET /api/mitigation/targets` (§6.4).
