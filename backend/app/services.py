@@ -109,8 +109,15 @@ def handle_inbound(phone, text, channel="sms", lat=None, lng=None, use_llm=True)
     h = find_or_create_household(phone)
     record_inbound(h, text, channel, lat, lng)
     # Before landfall, "1" / "2" / "3" / a photo confirm a pre-storm action instead of starting triage.
-    if clock.phase_of(clock.now()) == "before" and business.is_action_reply(h, text):
-        return {"engine": "actions", "confirmed": business.handle_action_reply(db.get("households", h["id"]), text)}
+    if clock.phase_of(clock.now()) == "before":
+        if business.is_action_reply(h, text):
+            return {"engine": "actions", "confirmed": business.handle_action_reply(db.get("households", h["id"]), text)}
+        # Before landfall a first "hola" just opens the conversation (shared iMessage lines need the person to
+        # text first). No triage yet.
+        es = h.get("language") == "es"
+        messenger.deliver(h, "Good Neighbor: listo. Le avisaremos aquí si una tormenta se acerca a su casa."
+                          if es else "Good Neighbor here: you're set. We'll text you here if a storm heads your way.")
+        return {"engine": "optin"}
     return agent.run(h["id"], phone, text, use_llm=use_llm)
 
 

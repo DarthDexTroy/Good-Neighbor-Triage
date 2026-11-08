@@ -43,6 +43,7 @@ export default function App() {
   const [phone, setPhone] = useState(REYES_PHONE)
   const [text, setText] = useState(JUDGE_TEXT)
   const prevRanks = useRef({})
+  const demoPhoneSet = useRef(false)
 
   useEffect(() => {
     let alive = true
@@ -68,6 +69,7 @@ export default function App() {
           }), 4000)
         }
         setState(s)
+        if (s.config?.demo_phone && !demoPhoneSet.current) { demoPhoneSet.current = true; setPhone(s.config.demo_phone) }
       } catch (e) {
         if (alive) setError(`Can't reach the backend: ${e.message}`)
       }

@@ -11,17 +11,35 @@ log = logging.getLogger("lifeline.messenger")
 
 
 class PhotonMessenger:
-    """TODO(teammate): fill these in from the Photon 2.0 docs (get them at the sponsor booth).
+    """Photon 2.0 (beta) REST API: https://photon.codes/docs/beta (base https://api.photon.codes/v1).
 
-    Don't guess the API. Typical shape: an HTTP POST with the API key, a recipient, a channel
-    (sms / imessage / whatsapp) and the text. Voice calls take a text-to-speech script.
+    Shared iMessage lines can't start a conversation, so we can only reply into a space the person
+    opened by texting the agent number first. photon.py records {handle: (space_id, agent_user_id)}
+    from every inbound message; send() looks it up here.
     """
 
+    def _space(self, to):
+        return (db.get("meta", "photon:spaces") or {}).get(to)
+
     def send(self, to: str, text: str, channel: str = "sms") -> None:
-        raise NotImplementedError("Photon send not wired yet; see PhotonMessenger in messenger.py")
+        import uuid
+
+        import httpx
+        space = self._space(to)
+        if not space:
+            raise RuntimeError(f"No Photon conversation with {to[-4:]} yet: they must text the agent number first")
+        r = httpx.post(
+            f"{config.PHOTON_BASE_URL}/v1/projects/{config.PHOTON_PROJECT_ID}/messages",
+            headers={"Authorization": f"Bearer {config.PHOTON_API_KEY}", "idempotency-key": f"gn-{uuid.uuid4()}"},
+            json={"spaceId": space["space_id"], "senderId": space["agent_id"],
+                  "content": {"type": "text", "format": "plain", "text": text}},
+            timeout=15,
+        )
+        if r.status_code >= 300:
+            raise RuntimeError(f"Photon send {r.status_code}: {r.text[:200]}")
 
     def call(self, to: str, script: str) -> None:
-        raise NotImplementedError("Photon voice not wired yet")
+        raise NotImplementedError("Photon voice not wired (shared iMessage lines don't support calls)")
 
 
 _photon = PhotonMessenger()

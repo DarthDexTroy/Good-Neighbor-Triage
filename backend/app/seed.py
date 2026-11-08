@@ -210,6 +210,12 @@ def seed(rng_seed: int = 7):
 
 REYES_ID = "H-REYES"
 REYES_PHONE = "+17135550188"
+
+
+def reyes_phone():
+    """With DEMO_FAMILY_PHONE set, the demo family is your own phone, so real Photon texts reach you."""
+    from . import config
+    return config.DEMO_FAMILY_PHONE or REYES_PHONE
 LANDFALL = 0
 CONTRACTORS = [
     # Gulf Rapid Roofing is the planted storm chaser: unlicensed, 9 claims, benefits signed ~6h after landfall.
@@ -251,7 +257,7 @@ def _reyes(block):
         "lat": round((s + n) / 2 - 0.0012, 6),
         "lng": round((w + e) / 2 + 0.0010, 6),
         "block_id": block["id"],
-        "phone": REYES_PHONE,
+        "phone": reyes_phone(),
         "language": "es",
         "source": "policyholder",
         "consent": True,

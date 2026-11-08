@@ -1,6 +1,6 @@
 # STATUS (Phil → Cristobal)
 
-Latest push on `main`. Every Build-list item in HANDOFF-PHIL.md is done **except #1 (sponsor check)**. 17 backend tests pass, and the full Reyes journey was clicked through in the browser.
+Latest push on `main`. Every Build-list item in HANDOFF-PHIL.md is done **except #1 (sponsor check)**. 18 backend tests pass, and the full Reyes journey was clicked through in the browser.
 
 > Note: the frontend is in **`frontend/src/`**, not `src/` at the repo root as HANDOFF-PHIL.md says.
 
@@ -10,7 +10,7 @@ Latest push on `main`. Every Build-list item in HANDOFF-PHIL.md is done **except
 cd backend && uv venv .venv && uv pip install -r requirements.txt   # first time only
 backend/.venv/bin/uvicorn app.main:app --app-dir backend --port 8000
 npm --prefix frontend install && npm --prefix frontend run dev      # http://localhost:5173
-backend/.venv/bin/python -m pytest -q backend                       # 17 tests
+backend/.venv/bin/python -m pytest -q backend                       # 18 tests
 ```
 
 `DEMO_MODE=1` (the default) turns on simulated replies. The uvicorn command above runs **without `--reload`**, so restart it after editing backend code.
@@ -33,9 +33,19 @@ backend/.venv/bin/python -m pytest -q backend                       # 17 tests
 
 ## What's broken / not done
 
-- **#1 Sponsor check: not done (blocked).** There's no NVIDIA or Photon key: `backend/.env` doesn't exist. The HackUTD credits page lists neither. The demo runs on the rules fallback and the phone simulator (the badges say so).
-  - Nemotron: put a free key from build.nvidia.com in `backend/.env` as `NVIDIA_API_KEY`, run `backend/.venv/bin/python backend/scripts/nemotron_check.py` to list models, set `NEMOTRON_MODEL`, then run it with `--run`.
-  - Photon: we still need the key and the 2.0 docs. `messenger.PhotonMessenger.send` and the `/api/photon/inbound` field names are still TODO.
+- **#1 Sponsor check: code ready, waiting on keys.** There's no `backend/.env` yet. The demo runs on the rules fallback and the phone simulator (the badges say so).
+  - **Photon 2.0 is wired** against the beta REST API (`https://api.photon.codes/v1`, docs at photon.codes/docs/beta):
+    - **Inbound:** a poller in `app/photon.py` reads received iMessages every 2 s, so no tunnel is needed.
+    - **Outbound:** `messenger.PhotonMessenger.send` posts to `POST /v1/projects/{id}/messages`.
+    - Unit-tested with a sample message. **Not tested against the live API.**
+  - **To turn Photon on:**
+    1. Sign up at app.beta.photon.codes (free month, per the HackUTD credits page).
+    2. Create a project and an API key with `project:read` + `project:write`.
+    3. In the iMessage section, add your iPhone number and assign a shared line.
+    4. In `backend/.env`, set `PHOTON_API_KEY`, `PHOTON_PROJECT_ID` and `DEMO_FAMILY_PHONE=<your iPhone>`. That makes the Reyes family your phone.
+    5. Restart the backend and run `backend/.venv/bin/python backend/scripts/photon_check.py`.
+  - **Photon limit:** a shared line **cannot text first**. Before the demo, text **"hola"** to the agent number from your phone. Before landfall, that just gets a "you're set" reply (no triage). After that, every text reaches your phone.
+  - **Nemotron:** put a free key from build.nvidia.com in `backend/.env` as `NVIDIA_API_KEY`, run `backend/.venv/bin/python backend/scripts/nemotron_check.py` to list models, set `NEMOTRON_MODEL`, then run it with `--run`.
 - **Data change to know about:** Rosa Reyes also uses a walker (`mobility`). Without it the family scored 85 and ranked #3–4 behind other simulated households. With it they score 95 and rank #1.
 - **Timing caveat (During):** the silent Jenkins couple keeps gaining points and passes the Reyes family at about T+2h30m, roughly 2.5 real minutes after you click During. **Send the Spanish text within about 90 s of opening During.** (Jenkins going to the top later is the "no one overlooked" story.)
 - `shelters.py` still isn't mounted in `main.py`. Not on the build list.

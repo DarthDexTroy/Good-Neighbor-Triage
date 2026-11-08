@@ -4,10 +4,15 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from . import business, clock, config, db, services
+from . import business, clock, config, db, photon, seed, services
 
 app = FastAPI(title="Good Neighbor Triage")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.on_event("startup")
+def _start_photon():
+    photon.start()  # no-op unless PHOTON_API_KEY and PHOTON_PROJECT_ID are set
 
 
 class DevInbound(BaseModel):
@@ -34,7 +39,7 @@ def _mask(phone):
 @app.get("/api/health")
 def health():
     return {"ok": True, "demo_mode": config.DEMO_MODE, "nemotron": config.llm_configured(),
-            "photon": config.photon_configured()}
+            "photon": config.photon_configured(), "photon_status": photon.status()}
 
 
 @app.post("/api/scenario/start")
@@ -57,8 +62,12 @@ def checkin_all():
 
 @app.post("/api/photon/inbound")
 async def photon_inbound(request: Request, background: BackgroundTasks):
-    """Photon webhook. TODO(teammate): map Photon 2.0's real payload fields here (check their docs)."""
+    """Optional webhook path. The demo uses polling (photon.py); this accepts a Photon Message or a flat
+    {from, text} body for rehearsal tools."""
     body = await request.json()
+    if isinstance(body, dict) and "sentBy" in body:  # a Photon 2.0 Message object
+        background.add_task(photon.process, body, set())
+        return {"ok": True}
     phone = body.get("from") or body.get("sender") or body.get("phone")
     text = body.get("text") or body.get("body") or body.get("message") or ""
     channel = body.get("channel", "sms")
@@ -137,7 +146,7 @@ def state():
         "event_phase": clock.phase_of(now) if m["phase"] != "idle" else None, "outreach_at": m.get("outreach_at"),
         "sweeps": m.get("sweeps", {}),
         "config": {"demo_mode": config.DEMO_MODE, "nemotron": config.llm_configured(),
-                   "photon": config.photon_configured()},
+                   "photon": config.photon_configured(), "demo_phone": seed.reyes_phone()},
         "counts": {**counts, "flagged_blocks": sum(b["flagged"] for b in blocks)},
         "blocks": blocks, "pins": pins, "queue": queue[:60], "teams": teams, "shelters": shelters,
         "trace": _trace(),

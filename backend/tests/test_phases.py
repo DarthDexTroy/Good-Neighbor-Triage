@@ -98,3 +98,19 @@ def test_cone_narrows():
     clock.jump(-20 * 60)
     narrow = c.get("/api/exposure").json()["totals"]["households"]
     assert narrow < wide
+
+
+def test_photon_inbound_message_is_routed_and_space_remembered():
+    from app import db, photon
+    c.post("/api/scenario/start", json={"phase": "before"})
+    msg = {"id": "msg_1", "status": "received", "createdAt": "2026-11-08T10:00:00Z", "platform": "imessage",
+           "sentBy": {"kind": "human", "handle": "+17135550188", "id": "usr_h"},
+           "receivedBy": {"kind": "agent", "handle": "+14155550100", "id": "usr_agent"},
+           "space": {"id": "spc_1", "kind": "direct"},
+           "content": {"type": "text", "format": "plain", "text": "hola"}}
+    seen = set()
+    assert photon.process(msg, seen) and not photon.process(msg, seen)  # de-duplicated
+    assert db.get("meta", "photon:spaces")["+17135550188"] == {"space_id": "spc_1", "agent_id": "usr_agent"}
+    assert _thread()[-1].startswith("Good Neighbor: listo")  # before landfall: opt-in ack, no triage
+    own = {**msg, "id": "msg_2", "sentBy": {"kind": "agent", "handle": "+14155550100", "id": "usr_agent"}}
+    assert not photon.process(own, seen)  # never answer our own messages
