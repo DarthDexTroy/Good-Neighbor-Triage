@@ -311,7 +311,10 @@ export function AfterView({ onError }) {
   const [ks] = usePoll(api.contractors)
   const [msg, setMsg] = useState(null)
   const act = async (fn, done) => {
-    try { const r = await fn(); setMsg(done(r)); reload() } catch (e) { onError(e.message) }
+    try {
+      const r = await fn(); setMsg(done(r)); reload()
+      setTimeout(() => setMsg(null), 6000)
+    } catch (e) { onError(e.message) }
   }
   if (!rec) return <main className="grid flex-1 place-items-center text-slate-400">Loading claims…</main>
   return (
@@ -320,8 +323,15 @@ export function AfterView({ onError }) {
         <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 px-3 py-2 text-xs">
           <span className="text-slate-400">{rec.rule}</span>
           <div className="ml-auto flex gap-2">
-            <button onClick={() => act(api.runAutopay, (r) => `Auto-paid ${r.paid} claim(s); each person got a text.`)}
-              className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-emerald-500">Run auto-pay</button>
+            {(() => {
+              const unpaid = rec.lanes.autopay.filter((c) => c.paid_t == null).length
+              return (
+                <button disabled={!unpaid} onClick={() => act(api.runAutopay, (r) => `Auto-paid ${r.paid} claim(s); each person got a text.`)}
+                  className="rounded bg-emerald-600 px-3 py-1.5 text-sm font-bold text-white hover:bg-emerald-500 disabled:bg-emerald-900 disabled:text-emerald-300">
+                  {unpaid ? `Run auto-pay (${unpaid} ready)` : 'All auto-pay claims paid ✓'}
+                </button>
+              )
+            })()}
             <button onClick={() => act(api.warnScams, (r) => `Scam warning sent to ${r.sent} policyholders in damaged blocks.`)}
               className="rounded border border-slate-600 px-3 py-1.5 text-sm font-semibold hover:bg-slate-800">Send scam warning</button>
           </div>
