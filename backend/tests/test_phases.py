@@ -125,3 +125,10 @@ def test_stranger_gets_demo_disclaimer_first():
     c.post("/api/dev/inbound", json={"phone": "+15125550777", "text": "water coming in"})
     msgs = [m for m in c.get("/api/cases/H-LIVE-0777/messages").json() if m["direction"] == "out"]
     assert sum("HackUTD demo" in m["body"] for m in msgs) == 1  # only once
+
+
+def test_restart_keeps_photon_conversations():
+    from app import db
+    db.put("meta", "photon:spaces", {"id": "photon:spaces", "+17135550188": {"space_id": "s", "agent_id": "a"}})
+    c.post("/api/scenario/start", json={"phase": "before"})
+    assert db.get("meta", "photon:spaces")["+17135550188"]["space_id"] == "s"

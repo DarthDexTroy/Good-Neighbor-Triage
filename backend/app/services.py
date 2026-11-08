@@ -28,7 +28,10 @@ def start_scenario(phase: str = "during"):
     from . import business, simulator
     simulator.stop()
     business.stop_sim()
+    spaces = db.get("meta", "photon:spaces")  # keep open Photon conversations across restarts
     db.reset()
+    if spaces:
+        db.put("meta", "photon:spaces", spaces)
     stats = seed.seed()
     clock.start(clock.PHASE_AT[phase])
     business.backfill_autopay()
