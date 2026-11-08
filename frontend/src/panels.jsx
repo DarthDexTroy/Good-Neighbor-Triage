@@ -182,28 +182,103 @@ const short = (o) => {
   return s.length > 140 ? s.slice(0, 140) + '…' : s
 }
 
+const ENGINE_LABEL = {
+  nemotron: ['NVIDIA Nemotron', 'bg-lime-800 text-lime-100'],
+  'nemotron→rules': ['Nemotron + backup rules', 'bg-lime-900 text-lime-200'],
+  rules: ['Backup rules', 'bg-slate-700 text-slate-200'],
+  simulated: ['Simulated resident', 'bg-slate-800 text-slate-400'],
+}
+const NEED_WORDS = {
+  oxygen: 'uses oxygen', dialysis: 'needs dialysis', insulin_low: 'low on insulin', infant: 'has an infant',
+  elderly: 'elderly person', mobility: 'limited mobility', power_out: 'power is out',
+}
+const DANGER_WORDS = {
+  water_rising: 'water coming in', trapped: 'trapped', roof: 'on the roof / attic',
+  medical_emergency: 'medical emergency', asked_help: 'asked for help',
+}
+const SOURCE_WORDS = { policyholder: 'policyholder', app: 'app user', utility_medical: 'on the utility medical list',
+  census_estimate: 'census estimate', live: 'new texter' }
+
+/** One plain-English line per agent step. */
+function stepText(t) {
+  const r = t.result || {}
+  const a = t.args || {}
+  const list = (obj, words) => Object.entries(obj || {}).filter(([, v]) => v).map(([k]) => words[k] || k)
+  switch (t.tool) {
+    case 'lookup_household': {
+      const onFile = list(r.on_file, NEED_WORDS)
+      return `Looked up who texted: ${r.name || 'unknown'} (${SOURCE_WORDS[r.source] || r.source}, ${r.language === 'es' ? 'Spanish' : 'English'})` +
+        (onFile.length ? `. On file: ${onFile.join(', ')}.` : '.')
+    }
+    case 'get_hazard':
+      return `Checked the flood at their address: about ${r.flood_depth_ft} ft of water (block ${r.block})${r.power_out ? ', power is out' : ''}.`
+    case 'update_needs': {
+      const needs = list(a.needs, NEED_WORDS)
+      const danger = (a.danger || []).map((d) => DANGER_WORDS[d] || d)
+      if (a.self_reported_safe && !danger.length) return 'Understood the message: they say they are safe.'
+      const parts = [...danger, ...needs]
+      return `Understood the message: ${parts.length ? parts.join(', ') : 'no specific needs mentioned'}.`
+    }
+    case 'compute_score':
+      return `Urgency score ${r.score}/100 because: ${(r.reasons || []).map((x) => x.replace(/ \(([+-]\d+)\)$/, ' ($1)')).join('; ')}.`
+    case 'find_shelter':
+      return r.shelter
+        ? `Matched a shelter: ${r.shelter} (${r.beds_free} beds free${r.wheelchair ? ', wheelchair access' : ''}${r.backup_power ? ', backup power' : ''}).`
+        : 'Looked for a shelter that fits their needs: none open.'
+    case 'send_reply':
+      return `Replied: \u201c${a.text || ''}\u201d ${r.via === 'photon' ? '(sent by iMessage)' : r.via === 'mock' ? '(simulated, not actually sent)' : `(${r.via})`}`
+    case 'error':
+      return 'The AI model was unavailable, so the backup rules took over.'
+    default:
+      return t.tool
+  }
+}
+
+/** Group consecutive steps for the same text into one card, oldest step first. */
+function groupTrace(rows) {
+  const groups = []
+  const byId = {}
+  for (const t of rows) {
+    // Steps carry a run id (one per incoming text). Older rows without one fall back to household + engine.
+    const id = t.run || `${t.household_id}|${t.engine}`
+    const g = byId[id]
+    if (g && (t.run || groups[groups.length - 1] === g)) g.steps.push(t)
+    else {
+      byId[id] = { key: t.id, household_id: t.household_id, engine: t.engine, name: t.name, when: t.when, steps: [t] }
+      groups.push(byId[id])
+    }
+  }
+  groups.forEach((g) => g.steps.reverse())
+  return groups
+}
+
 export function TracePanel({ trace }) {
   const [showSim, setShowSim] = useState(false)
   const rows = showSim ? trace : trace.filter((t) => t.engine !== 'simulated')
+  const groups = groupTrace(rows)
   return (
-    <div className="space-y-1.5 font-mono text-[11px]">
-      <label className="flex items-center gap-2 font-sans text-xs text-slate-400">
+    <div className="space-y-2 text-xs">
+      <p className="text-slate-400">Each card is one incoming text and every step the agent took on its own to handle it.</p>
+      <label className="flex items-center gap-2 text-slate-400">
         <input type="checkbox" checked={showSim} onChange={(e) => setShowSim(e.target.checked)} />
         Show simulated resident replies
       </label>
-      {!rows.length && <Empty text="Agent steps appear here when a real (or rehearsal) text comes in." />}
-      {rows.map((t) => (
-        <div key={t.id} className="rounded border border-slate-800 bg-slate-900 p-2">
-          <div className="flex items-center gap-2">
-            <span className={`${chip} ${t.engine.startsWith('nemotron') ? 'bg-lime-800 text-lime-100' : 'bg-slate-700 text-slate-200'}`}>{t.engine}</span>
-            <span className="font-bold text-sky-300">{t.tool}</span>
-            <span className="truncate text-slate-500">{t.name}</span>
-            <span className="ml-auto text-slate-500">{t.when}</span>
+      {!groups.length && <Empty text="Agent steps appear here when a real (or rehearsal) text comes in." />}
+      {groups.map((g) => {
+        const [label, cls] = ENGINE_LABEL[g.engine] || [g.engine, 'bg-slate-700 text-slate-200']
+        return (
+          <div key={g.key} className="rounded-lg border border-slate-800 bg-slate-900 p-2.5">
+            <div className="mb-1.5 flex items-center gap-2">
+              <span className={`${chip} ${cls}`}>{label}</span>
+              <span className="truncate font-semibold text-slate-200">{g.name}</span>
+              <span className="ml-auto text-slate-500">{g.when}</span>
+            </div>
+            <ol className="space-y-1 pl-4 text-slate-300" style={{ listStyle: 'decimal' }}>
+              {g.steps.map((t) => <li key={t.id}>{stepText(t)}</li>)}
+            </ol>
           </div>
-          {Object.keys(t.args || {}).length > 0 && <div className="mt-1 text-slate-400">args {short(t.args)}</div>}
-          <div className="text-slate-300">→ {short(t.result)}</div>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

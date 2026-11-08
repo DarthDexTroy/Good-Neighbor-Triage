@@ -5,6 +5,7 @@ Every tool call is written to the `trace` table and shown live in the dashboard.
 The agent can never dispatch a team: it recommends, a human approves.
 """
 import json
+import uuid
 import logging
 
 from . import clock, config, db, extract, messenger, scoring, services
@@ -67,11 +68,13 @@ class Toolbox:
         self.household_id = household_id
         self.engine = engine
         self.called = set()
+        self.run_id = uuid.uuid4().hex[:8]  # groups all steps for one incoming text in the trace view
 
     def trace(self, tool, args, result):
         h = db.get("households", self.household_id) or {}
         db.append("trace", {"t": clock.now(), "engine": self.engine, "household_id": self.household_id,
-                            "name": h.get("name"), "tool": tool, "args": args, "result": result})
+                            "name": h.get("name"), "tool": tool, "args": args, "result": result,
+                            "run": self.run_id})
 
     def run(self, tool, args):
         fn = getattr(self, f"t_{tool}", None)
