@@ -114,3 +114,14 @@ def test_photon_inbound_message_is_routed_and_space_remembered():
     assert _thread()[-1].startswith("LifeLine: listo")  # before landfall: opt-in ack, no triage
     own = {**msg, "id": "msg_2", "sentBy": {"kind": "agent", "handle": "+14155550100", "id": "usr_agent"}}
     assert not photon.process(own, seen)  # never answer our own messages
+
+
+def test_stranger_gets_demo_disclaimer_first():
+    c.post("/api/scenario/start", json={"phase": "during"})
+    c.post("/api/dev/inbound", json={"phone": "+15125550777", "text": "hello?"})
+    msgs = [m for m in c.get("/api/cases/H-LIVE-0777/messages").json() if m["direction"] == "out"]
+    assert msgs[0]["body"].startswith("LifeLine is a HackUTD demo") and "911" in msgs[0]["body"]
+    assert sum("HackUTD demo" in m["body"] for m in msgs) == 1
+    c.post("/api/dev/inbound", json={"phone": "+15125550777", "text": "water coming in"})
+    msgs = [m for m in c.get("/api/cases/H-LIVE-0777/messages").json() if m["direction"] == "out"]
+    assert sum("HackUTD demo" in m["body"] for m in msgs) == 1  # only once

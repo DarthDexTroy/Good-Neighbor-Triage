@@ -116,6 +116,11 @@ def handle_inbound(phone, text, channel="sms", lat=None, lng=None, use_llm=True)
     from . import agent, business
     h = find_or_create_household(phone)
     record_inbound(h, text, channel, lat, lng)
+    if h.get("source") == "live" and not any(m.get("household_id") == h["id"] and m["direction"] == "out"
+                                             for m in db.all_docs("messages")):
+        # A stranger texting the public demo line: make sure nobody mistakes this for an emergency service.
+        messenger.deliver(h, "LifeLine is a HackUTD demo, not an emergency service. If you are in danger, call 911. "
+                             "LifeLine es una demostración, no un servicio de emergencia. Si está en peligro, llame al 911.")
     # Before landfall, "1" / "2" / "3" / a photo confirm a pre-storm action instead of starting triage.
     if clock.phase_of(clock.now()) == "before":
         if business.is_action_reply(h, text):

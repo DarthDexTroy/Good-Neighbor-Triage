@@ -4,6 +4,18 @@ Latest push on `main`. Every Build-list item in HANDOFF-PHIL.md is done **except
 
 > Note: the frontend is in **`frontend/src/`**, not `src/` at the repo root as HANDOFF-PHIL.md says.
 
+## Public live site
+
+- Landing page: https://darthdextroy.github.io/Good-Neighbor-Triage/
+- **Live dashboard:** https://darthdextroy.github.io/Good-Neighbor-Triage/app/ (the real React app, served from the `gh-pages` branch).
+- It calls the backend on Phil's laptop through a free Cloudflare quick tunnel. The address is in `app/config.json` on `gh-pages`.
+- **It only works while the laptop, the backend and the tunnel are running.**
+- The tunnel address changes on every restart. Run `scripts/publish_tunnel.sh` to restart the tunnel and republish the address in one step.
+- To test a different backend: add `?api=<url>` to the dashboard address.
+- Anyone with the link can press Restart scenario, because it's one shared demo.
+- Strangers who text the line get a one-time "LifeLine is a HackUTD demo, not an emergency service… call 911" message first.
+- **Shared Photon line:** only Phil's phone can text +1 (628) 263-4622. For strangers to text in, buy a dedicated iMessage number in the Photon dashboard. No code change is needed.
+
 ## How to run
 
 ```bash
