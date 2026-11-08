@@ -115,15 +115,37 @@ def record_inbound(household, text, channel="sms", lat=None, lng=None):
     db.put("cases", household["id"], case)
 
 
+LANG_WORDS = {"en": "en", "english": "en", "ingles": "en", "inglés": "en",
+              "es": "es", "español": "es", "espanol": "es", "spanish": "es"}
+LANG_PICK = "Reply EN for English · Responda ES para español."
+
+
+def set_language(h, text):
+    """'EN' / 'ES' (or English / Español) switches the household's language. Returns True if handled."""
+    lang = LANG_WORDS.get(text.strip().lower().strip(".!"))
+    if not lang:
+        return False
+    h = db.get("households", h["id"])
+    h["language"], h["language_chosen"] = lang, True
+    db.put("households", h["id"], h)
+    messenger.deliver(h, "LifeLine: listo, le escribiremos en español." if lang == "es"
+                      else "LifeLine: got it, we'll text you in English.")
+    audit("resident", f"Language set to {'Spanish' if lang == 'es' else 'English'}", h["id"])
+    return True
+
+
 def handle_inbound(phone, text, channel="sms", lat=None, lng=None, use_llm=True):
     from . import agent, business
     h = find_or_create_household(phone)
     record_inbound(h, text, channel, lat, lng)
+    if set_language(h, text):
+        return {"engine": "language"}
     if h.get("source") == "live" and not any(m.get("household_id") == h["id"] and m["direction"] == "out"
                                              for m in db.all_docs("messages")):
         # A stranger texting the public demo line: make sure nobody mistakes this for an emergency service.
         messenger.deliver(h, "LifeLine is a HackUTD demo, not an emergency service. If you are in danger, call 911. "
-                             "LifeLine es una demostración, no un servicio de emergencia. Si está en peligro, llame al 911.")
+                             "LifeLine es una demostración, no un servicio de emergencia. Si está en peligro, llame al 911. "
+                             + LANG_PICK)
     # Before landfall, "1" / "2" / "3" / a photo confirm a pre-storm action instead of starting triage.
     if clock.phase_of(clock.now()) == "before":
         if business.is_action_reply(h, text):
@@ -131,8 +153,9 @@ def handle_inbound(phone, text, channel="sms", lat=None, lng=None, use_llm=True)
         # Before landfall a first "hola" just opens the conversation (shared iMessage lines need the person to
         # text first). No triage yet.
         es = h.get("language") == "es"
-        messenger.deliver(h, "LifeLine: listo. Le avisaremos aquí si una tormenta se acerca a su casa."
-                          if es else "LifeLine: you're set. We'll text you here if a storm heads your way.")
+        messenger.deliver(h, ("LifeLine: listo. Le avisaremos aquí si una tormenta se acerca a su casa. "
+                              if es else "LifeLine: you're set. We'll text you here if a storm heads your way. ")
+                          + LANG_PICK)
         return {"engine": "optin"}
     return agent.run(h["id"], phone, text, use_llm=use_llm)
 

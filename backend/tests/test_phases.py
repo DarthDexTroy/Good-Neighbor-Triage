@@ -132,3 +132,19 @@ def test_restart_keeps_photon_conversations():
     db.put("meta", "photon:spaces", {"id": "photon:spaces", "+17135550188": {"space_id": "s", "agent_id": "a"}})
     c.post("/api/scenario/start", json={"phase": "before"})
     assert db.get("meta", "photon:spaces")["+17135550188"]["space_id"] == "s"
+
+
+def test_language_picker():
+    from app import db
+    c.post("/api/scenario/start", json={"phase": "before"})
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "hola"})
+    assert "Reply EN for English" in _thread()[-1]
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "EN"})
+    assert _thread()[-1] == "LifeLine: got it, we'll text you in English."
+    assert db.get("households", "H-REYES")["language"] == "en"
+    c.post("/api/before/send_actions")
+    assert "Reply 1 when done" in _thread()[-1]
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "1"})
+    assert _thread()[-1].startswith("Thanks! Marked done: car moved")
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "Español"})
+    assert db.get("households", "H-REYES")["language"] == "es"

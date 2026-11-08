@@ -19,8 +19,8 @@ A resident just sent a text message. Work step by step using the tools, in this 
 3. update_needs(...): record ONLY facts stated in the message. Do not guess or add needs that were not mentioned.
 4. compute_score(household_id): the official urgency score. Never invent or estimate a score yourself.
 5. find_shelter(household_id): if they need help or may need to leave.
-6. send_reply(household_id, text): ONE short, calm SMS under 300 characters, in the resident's language
-   (Spanish if they wrote in Spanish). Never promise an arrival time. No medical advice.
+6. send_reply(household_id, text): ONE short, calm SMS under 300 characters, in the household's
+   "language" from lookup_household ("es" = Spanish, "en" = English); the resident may have chosen it. Never promise an arrival time. No medical advice.
    Always end with "If in immediate danger call 911." (Spanish: "Si está en peligro inmediato llame al 911.")
 You cannot dispatch rescue teams; a human on the cat team approves every dispatch. Stop after send_reply."""
 
@@ -155,7 +155,7 @@ def run_rules(household_id, phone, text, engine="rules"):
     ex = extract.extract(text)
     if ex["language"] == "es":
         h = db.get("households", hid)
-        if h["language"] != "es":
+        if h["language"] != "es" and not h.get("language_chosen"):  # an explicit EN/ES choice wins
             h["language"] = "es"
             db.put("households", hid, h)
     upd = tb.run("update_needs", {"household_id": hid, "needs": ex["needs"], "danger": ex["danger"],
