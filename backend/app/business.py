@@ -147,8 +147,8 @@ def _actions_for(h, depth):
 
 def action_text(h, acts):
     es = h.get("language") == "es"
-    lines = ["Good Neighbor: una tormenta llega en ~48 horas." if es else
-             "Good Neighbor here: a storm is expected in ~48 hours."]
+    lines = ["LifeLine: una tormenta llega en ~48 horas." if es else
+             "LifeLine: a storm is expected in ~48 hours."]
     for a in acts:
         lines.append({
             "car": "1) Mueva su carro a un lugar alto. Responda 1 cuando lo haga." if es else
@@ -402,9 +402,9 @@ def pay(claim_id, actor="auto-pay rule", notify=True, at=None):
     if notify:
         h = db.get("households", raw["household_id"])
         amt = f"${raw['paid_amount']:,}"
-        messenger.deliver(h, f"Good Neighbor: su reclamo #{raw['claim_number']} fue aprobado. {amt} va en camino."
+        messenger.deliver(h, f"LifeLine: su reclamo #{raw['claim_number']} fue aprobado. {amt} va en camino."
                           if h.get("language") == "es" else
-                          f"Good Neighbor here: your claim #{raw['claim_number']} is approved. {amt} is on the way.")
+                          f"LifeLine: your claim #{raw['claim_number']} is approved. {amt} is on the way.")
         from . import services
         services.audit(actor, f"Auto-paid {raw['claim_number']} ({amt})", h["id"])
     return raw
@@ -451,10 +451,10 @@ def warn_scams():
             continue
         if blocks[h["block_id"]]["flood_depth_ft"] == 0:
             continue
-        messenger.deliver(h, "Good Neighbor: las estafas de reparación son comunes después de una tormenta. Verifique "
+        messenger.deliver(h, "LifeLine: las estafas de reparación son comunes después de una tormenta. Verifique "
                              "licencias y nunca ceda sus beneficios de seguro en la puerta. ¿Preguntas? Responda AYUDA."
                           if h.get("language") == "es" else
-                          "Good Neighbor here: storm repair scams are common. Verify licenses, and never sign over "
+                          "LifeLine: storm repair scams are common. Verify licenses, and never sign over "
                           "your insurance benefits at the door. Questions? Reply HELP.")
         sent += 1
     services.audit("cat team", f"Scam warning sent to {sent} policyholders in damaged blocks")

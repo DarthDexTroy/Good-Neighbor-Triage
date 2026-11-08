@@ -12,7 +12,7 @@ from . import clock, config, db, extract, messenger, scoring, services
 log = logging.getLogger("lifeline.agent")
 MAX_STEPS = 7
 
-SYSTEM_PROMPT = """You are Good Neighbor Triage's agent, working for an insurer's catastrophe team during a flash flood in Houston.
+SYSTEM_PROMPT = """You are LifeLine's agent, working for an insurer's catastrophe team during a flash flood in Houston.
 A resident just sent a text message. Work step by step using the tools, in this order:
 1. lookup_household(phone): who they are and what is already on file.
 2. get_hazard(household_id): flood depth and power status at their address.
@@ -125,8 +125,8 @@ class Toolbox:
 
     def t_send_reply(self, household_id, text):
         h = db.get("households", household_id)
-        if not text.lstrip().lower().startswith("good neighbor"):
-            text = ("Good Neighbor: " if h.get("language") == "es" else "Good Neighbor here: ") + text.lstrip()
+        if not text.lstrip().lower().startswith("lifeline"):
+            text = "LifeLine: " + text.lstrip()
         via = messenger.deliver(h, text[:480])
         return {"sent": True, "via": via}
 
@@ -138,12 +138,12 @@ def reply_text(lang, status, shelter):
         if status == "self_reported_safe":
             return "Gracias, nos alegra que estén bien. Responda AYUDA si algo cambia. Si está en peligro inmediato llame al 911."
         s = f" Refugio más cercano: {shelter}." if shelter else ""
-        return ("Good Neighbor: recibimos su mensaje y su hogar está marcado como prioridad. Estamos coordinando "
+        return ("LifeLine: recibimos su mensaje y su hogar está marcado como prioridad. Estamos coordinando "
                 f"un equipo de respuesta.{s} Si está en peligro inmediato llame al 911.")
     if status == "self_reported_safe":
         return "Thanks, glad you're safe. Reply HELP anytime if that changes. If in immediate danger call 911."
     s = f" Nearest open shelter: {shelter}." if shelter else ""
-    return ("Good Neighbor here: we got your message and flagged your household as a priority. A response team is "
+    return ("LifeLine: we got your message and flagged your household as a priority. A response team is "
             f"being coordinated.{s} If in immediate danger call 911.")
 
 

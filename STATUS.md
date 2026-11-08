@@ -29,12 +29,12 @@ backend/.venv/bin/python -m pytest -q backend                       # 18 tests
 | 9 | All 4 contractor rules plus the contractor list. Gulf Rapid Roofing: 9 claims, all 4 flags, all routed to Field. Scam-warning text button. | `GET /api/contractors`, `POST /api/recovery/warn_scams` |
 | 10 | Placeholder before/after SVG photo pairs on claims, labeled "Simulated damage assessment" | `frontend/public/photos/` |
 | | Phone simulator (bottom right, every tab) shows the Reyes thread live, with quick-reply chips per phase | `GET /api/thread?phone=` |
-| | Message templates now start with "Good Neighbor", not "State Farm Lifeline" | `services.py`, `agent.py` |
+| | Product name is **LifeLine** everywhere people see it (dashboard, tab, every text). Texts start "LifeLine:", never "State Farm" | all templates |
 
 ## What's broken / not done
 
 - **#1 Sponsor check: DONE, both live (verified 2026-11-08).**
-  - **Nemotron:** `nvidia/nemotron-3.5-super-vl-120b-a12b`, thinking off. `scripts/nemotron_check.py --run` passes: the model ran the whole tool loop (lookup → hazard → needs → score → shelter → reply). Replies are forced to start with "Good Neighbor".
+  - **Nemotron:** `nvidia/nemotron-3.5-super-vl-120b-a12b`, thinking off. `scripts/nemotron_check.py --run` passes: the model ran the whole tool loop (lookup → hazard → needs → score → shelter → reply). Replies are forced to start with "LifeLine:".
   - **Photon 2.0 beta:**
     - Project `good-neighbor`; shared iMessage line **+1 (628) 263-4622**.
     - `app/photon.py` polls received messages; `PhotonMessenger.send` replies into the person's space.

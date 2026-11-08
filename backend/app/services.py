@@ -3,9 +3,9 @@ from . import claims as claims_mod
 from . import clock, db, geo, messenger, scoring, seed, silence
 
 CHECKIN_TEXT = {
-    "en": "Good Neighbor here: flooding reported near you. Reply SAFE, HELP, or tell us what you need. "
+    "en": "LifeLine: flooding reported near you. Reply SAFE, HELP, or tell us what you need. "
           "If in immediate danger call 911.",
-    "es": "Good Neighbor: se reportan inundaciones cerca de usted. Responda BIEN, AYUDA, o díganos qué "
+    "es": "LifeLine: se reportan inundaciones cerca de usted. Responda BIEN, AYUDA, o díganos qué "
           "necesita. Si está en peligro inmediato llame al 911.",
 }
 
@@ -123,8 +123,8 @@ def handle_inbound(phone, text, channel="sms", lat=None, lng=None, use_llm=True)
         # Before landfall a first "hola" just opens the conversation (shared iMessage lines need the person to
         # text first). No triage yet.
         es = h.get("language") == "es"
-        messenger.deliver(h, "Good Neighbor: listo. Le avisaremos aquí si una tormenta se acerca a su casa."
-                          if es else "Good Neighbor here: you're set. We'll text you here if a storm heads your way.")
+        messenger.deliver(h, "LifeLine: listo. Le avisaremos aquí si una tormenta se acerca a su casa."
+                          if es else "LifeLine: you're set. We'll text you here if a storm heads your way.")
         return {"engine": "optin"}
     return agent.run(h["id"], phone, text, use_llm=use_llm)
 

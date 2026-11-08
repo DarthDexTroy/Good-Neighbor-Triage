@@ -1,5 +1,5 @@
 /**
- * Photon (Spectrum) <-> Good Neighbor backend bridge.
+ * Photon (Spectrum) <-> LifeLine backend bridge.
  *
  *   inbound:  iMessage -> Spectrum -> POST {BACKEND_URL}/api/photon/inbound {from, text, channel}
  *   outbound: backend messenger -> POST http://localhost:{BRIDGE_PORT}/send {to, text} -> space.send(text)

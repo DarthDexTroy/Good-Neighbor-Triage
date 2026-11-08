@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from . import business, clock, config, db, photon, seed, services
 
-app = FastAPI(title="Good Neighbor Triage")
+app = FastAPI(title="LifeLine")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 

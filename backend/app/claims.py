@@ -9,7 +9,7 @@ def timeline(household_id):
     for m in db.all_docs("messages"):
         if m.get("household_id") != household_id:
             continue
-        who = "Good Neighbor" if m["direction"] == "out" else "Resident"
+        who = "LifeLine" if m["direction"] == "out" else "Resident"
         loc = f" @ {m['lat']:.3f},{m['lng']:.3f}" if m.get("lat") is not None else ""
         events.append({"t": m["t"], "when": clock.fmt(m["t"]), "kind": f"{m['channel']} {m['direction']}",
                        "text": f"{who}: {m['body']}{loc}"})

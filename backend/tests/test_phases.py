@@ -111,6 +111,6 @@ def test_photon_inbound_message_is_routed_and_space_remembered():
     seen = set()
     assert photon.process(msg, seen) and not photon.process(msg, seen)  # de-duplicated
     assert db.get("meta", "photon:spaces")["+17135550188"] == {"space_id": "spc_1", "agent_id": "usr_agent"}
-    assert _thread()[-1].startswith("Good Neighbor: listo")  # before landfall: opt-in ack, no triage
+    assert _thread()[-1].startswith("LifeLine: listo")  # before landfall: opt-in ack, no triage
     own = {**msg, "id": "msg_2", "sentBy": {"kind": "agent", "handle": "+14155550100", "id": "usr_agent"}}
     assert not photon.process(own, seen)  # never answer our own messages

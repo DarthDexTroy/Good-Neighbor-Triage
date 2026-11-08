@@ -90,7 +90,7 @@ export default function App() {
     if (p) setFlyTarget([p.lat, p.lng])
   }
 
-  if (!state) return <div className="grid h-full place-items-center text-slate-400">{error || 'Connecting to Good Neighbor Triage…'}</div>
+  if (!state) return <div className="grid h-full place-items-center text-slate-400">{error || 'Connecting to LifeLine…'}</div>
   const c = state.counts
   const started = state.phase !== 'idle'
   const phase = state.event_phase || 'before'
@@ -102,7 +102,7 @@ export default function App() {
         <div className="mr-2">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-sf-red" />
-            <span className="text-lg font-extrabold tracking-tight">Good Neighbor Triage</span>
+            <span className="text-lg font-extrabold tracking-tight">LifeLine</span>
             <span className="text-xs text-slate-400">catastrophe response concept</span>
           </div>
           <div className="text-[11px] text-slate-500">Houston hurricane flood · <b>simulated data</b> · {state.clock}</div>
