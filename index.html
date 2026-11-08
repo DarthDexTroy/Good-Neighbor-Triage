@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Good Neighbor Triage</title>
+<meta name="description" content="Good Neighbor Triage: one text conversation before, during and after a catastrophe. A HackUTD 2026 project.">
+<style>
+  :root { --bg:#0b1120; --card:#111a2e; --text:#e2e8f0; --muted:#94a3b8; --accent:#ef4444; --amber:#f59e0b; --green:#34d399; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); line-height:1.55; }
+  main { max-width: 920px; margin: 0 auto; padding: 48px 20px 64px; }
+  .dot { display:inline-block; width:12px; height:12px; border-radius:50%; background:var(--accent); margin-right:8px; }
+  h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 0 0 8px; letter-spacing:-.02em; }
+  .lead { font-size: 1.2rem; color: var(--muted); max-width: 680px; }
+  .phases { display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:16px; margin: 36px 0; }
+  .card { background:var(--card); border:1px solid #1e293b; border-radius:14px; padding:20px; }
+  .tag { font-size:.75rem; font-weight:800; letter-spacing:.08em; padding:2px 8px; border-radius:6px; color:#0b1120; }
+  .before { background:var(--amber); } .during { background:var(--accent); color:#fff; } .after { background:var(--green); }
+  .card h3 { margin: 12px 0 6px; }
+  .card p, li { color: var(--muted); }
+  h2 { margin-top: 44px; }
+  .phone { background:#020617; border:4px solid #334155; border-radius:24px; padding:16px; max-width:340px; font-size:.9rem; }
+  .bubble { padding:8px 12px; border-radius:16px; margin:6px 0; max-width:90%; }
+  .out { background:#1e293b; } .in { background:#0284c7; margin-left:auto; color:#fff; }
+  .row { display:flex; gap:28px; flex-wrap:wrap; align-items:flex-start; }
+  .row > div { flex:1 1 300px; }
+  a { color:#7dd3fc; }
+  footer { margin-top:56px; font-size:.85rem; color:var(--muted); border-top:1px solid #1e293b; padding-top:16px; }
+</style>
+</head>
+<body>
+<main>
+  <div><span class="dot"></span><b>Good Neighbor Triage</b></div>
+  <h1>Warn you before. Find you during. Pay you after.</h1>
+  <p class="lead">Good Neighbor Triage turns the worst day into one text conversation. An AI agent texts people in a storm's path in their own language, ranks who needs help first during the flood, and gets claims paid fast afterward, with a scorecard that shows what it saves.</p>
+
+  <section class="phases">
+    <div class="card"><span class="tag before">BEFORE</span><h3>Prevent losses</h3>
+      <p>A forecast cone shows which homes are in the path and the expected loss. Each household gets 2–4 actions picked from its own data: move the car, shutter windows, refill oxygen, send photos. They reply 1, 2 or 3 when done.</p></div>
+    <div class="card"><span class="tag during">DURING</span><h3>No one overlooked</h3>
+      <p>Replies are scored 0–100 for urgency with a reason for every point. A silence map flags blocks where too few people answered, so the quiet ones get a door-to-door sweep.</p></div>
+    <div class="card"><span class="tag after">AFTER</span><h3>Fast, fair claims</h3>
+      <p>Claims route to auto-pay, desk or field adjusters. Small, clean claims with pre-storm photos are paid in hours. Contractor fraud patterns are flagged for review. Flags never deny a claim.</p></div>
+  </section>
+
+  <h2>How people use it</h2>
+  <div class="row">
+    <div>
+      <p>People don't install anything. They talk to Good Neighbor over iMessage or text, in English or Spanish.</p>
+      <ul>
+        <li>We only text people who opted in (policyholders and people who message us first).</li>
+        <li>Reply STOP at any time to stop messages.</li>
+        <li>Messages never replace 911. Every danger message tells people to call 911.</li>
+      </ul>
+    </div>
+    <div class="phone">
+      <div class="bubble out">Good Neighbor: una tormenta llega en ~48 horas. 1) Mueva su carro a un lugar alto. Responda 1 cuando lo haga.</div>
+      <div class="bubble in">1</div>
+      <div class="bubble out">¡Gracias! Marcamos: carro movido.</div>
+    </div>
+  </div>
+
+  <h2>About</h2>
+  <p>Built in 24 hours at <b>HackUTD 2026</b> for the catastrophe-response challenge. It's a concept, not an official product of any insurer. All households, phone numbers and claims in the demo are fictional. Messaging runs on Photon; the triage agent runs on NVIDIA Nemotron.</p>
+  <p>Source code: <a href="https://github.com/DarthDexTroy/Good-Neighbor-Triage">github.com/DarthDexTroy/Good-Neighbor-Triage</a></p>
+
+  <footer>© 2026 Good Neighbor Triage team · HackUTD 2026 project · Contact via GitHub.</footer>
+</main>
+</body>
+</html>
