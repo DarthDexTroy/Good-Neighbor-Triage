@@ -5,7 +5,7 @@ import threading
 
 from . import config
 
-DOC_TABLES = ["blocks", "households", "cases", "teams", "shelters", "claims", "meta"]
+DOC_TABLES = ["blocks", "households", "cases", "teams", "shelters", "claims", "contractors", "meta"]
 LOG_TABLES = ["messages", "trace", "audit"]
 
 _lock = threading.RLock()

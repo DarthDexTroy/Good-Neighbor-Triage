@@ -4,9 +4,9 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from . import clock, config, db, services
+from . import business, clock, config, db, services
 
-app = FastAPI(title="Lifeline")
+app = FastAPI(title="Good Neighbor Triage")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
@@ -184,3 +184,73 @@ def claims():
 @app.get("/api/cases/{case_id}/messages")
 def case_messages(case_id: str):
     return [{**m, "when": clock.fmt(m["t"])} for m in db.all_docs("messages") if m.get("household_id") == case_id]
+
+
+@app.get("/api/thread")
+def thread(phone: str):
+    """Messages for the phone simulator: everything sent to / received from this number."""
+    h = next((x for x in db.all_docs("households") if x.get("phone") == phone), None)
+    if not h:
+        return {"household": None, "messages": []}
+    return {"household": {"id": h["id"], "name": h["name"], "language": h.get("language")},
+            "messages": [{**m, "when": clock.fmt(m["t"])} for m in db.all_docs("messages")
+                         if m.get("household_id") == h["id"]][-40:]}
+
+
+# ---------- Before ----------
+
+@app.get("/api/exposure")
+def exposure():
+    return business.exposure()
+
+
+@app.post("/api/before/send_actions")
+def send_actions():
+    if services.meta()["phase"] == "idle":
+        raise HTTPException(400, "Start the scenario first")
+    if clock.phase_of(clock.now()) != "before":
+        raise HTTPException(409, "Action texts go out before landfall")
+    return business.send_actions()
+
+
+@app.get("/api/before/actions")
+def before_actions():
+    return business.actions_summary()
+
+
+# ---------- After ----------
+
+@app.get("/api/recovery/claims")
+def recovery_claims():
+    return business.recovery_claims()
+
+
+@app.post("/api/claims/{claim_id}/autopay")
+def autopay(claim_id: str):
+    try:
+        c = business.pay(claim_id, actor="cat team")
+    except KeyError:
+        raise HTTPException(404, "Unknown claim")
+    except ValueError as e:
+        raise HTTPException(409, str(e))
+    return {"paid_amount": c["paid_amount"], "paid_t": c["paid_t"]}
+
+
+@app.post("/api/recovery/run_autopay")
+def run_autopay():
+    return business.run_autopay()
+
+
+@app.get("/api/contractors")
+def contractors():
+    return business.contractors_view()
+
+
+@app.post("/api/recovery/warn_scams")
+def warn_scams():
+    return business.warn_scams()
+
+
+@app.get("/api/scorecard")
+def scorecard():
+    return business.scorecard()

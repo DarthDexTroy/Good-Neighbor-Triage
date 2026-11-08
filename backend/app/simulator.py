@@ -63,8 +63,8 @@ def _run(household_ids):
     plan = []
     for hid in household_ids:
         h = db.get("households", hid)
-        if hid == "H-JENKINS":
-            continue  # the demo couple never replies
+        if hid in ("H-JENKINS", seed.REYES_ID):
+            continue  # Jenkins never replies; the Reyes family's reply is the live demo text
         b = blocks[h["block_id"]]
         p = 0.07 if h["block_id"] == seed.FLAGGED_BLOCK else 0.95 - 0.5 * b["svi"]
         if rng.random() < p:

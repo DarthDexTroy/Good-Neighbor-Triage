@@ -16,7 +16,8 @@ DANGER = {
     "trapped": ["trapped", "stuck", "can't get out", "cant get out", "atrapad"],
     "roof": ["roof", "attic", "techo", "ático", "atico"],
     "water_rising": ["water rising", "water is rising", "water coming", "coming in", "water inside", "water in the house",
-                     "el agua está subiendo", "el agua esta subiendo", "entrando agua", "se está inundando"],
+                     "el agua está subiendo", "el agua esta subiendo", "entrando agua", "se está inundando",
+                     "agua está entrando", "agua esta entrando", "agua entrando", "se mete el agua"],
     "medical_emergency": ["can't breathe", "cant breathe", "unconscious", "chest pain", "bleeding", "no puede respirar"],
     "asked_help": ["help", "ayuda", "sos", "emergency", "emergencia"],
 }

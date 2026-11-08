@@ -182,6 +182,8 @@ def seed(rng_seed: int = 7):
 
     claims, dup = _claims(rng, households, blocks_by_id)
     households.append(dup)
+    # Before/After data uses its own RNG so the During scenario above stays byte-for-byte the same.
+    contractors = _business(random.Random(rng_seed + 1000), households, blocks, blocks_by_id, claims)
 
     cases = [{"id": h["id"], "household_id": h["id"], "status": "unreached", "needs": {}, "danger": [],
               "outreach_at": None, "last_reply_at": None, "assigned_team": None, "shelter_id": None}
@@ -193,6 +195,7 @@ def seed(rng_seed: int = 7):
     db.put_many("teams", _teams())
     db.put_many("shelters", _shelters(blocks))
     db.put_many("claims", claims)
+    db.put_many("contractors", contractors)
     for c in claims:
         if c["planted"] == "far_checkin":
             # Policyholder's phone checked in SAFE from ~40 miles west (Katy-ish) during the event.
@@ -201,3 +204,140 @@ def seed(rng_seed: int = 7):
     return {"blocks": len(blocks), "households": len(households),
             "in_zone": sum(1 for h in households if blocks_by_id[h["block_id"]]["flood_depth_ft"] > 0
                            and not h.get("hidden_from_map"))}
+
+
+# ---------- Before / After phases (all fake) ----------
+
+REYES_ID = "H-REYES"
+REYES_PHONE = "+17135550188"
+LANDFALL = 0
+CONTRACTORS = [
+    # Gulf Rapid Roofing is the planted storm chaser: unlicensed, 9 claims, benefits signed ~6h after landfall.
+    {"id": "K1", "name": "Gulf Rapid Roofing", "phone": "+17135550777", "licensed": False},
+    {"id": "K2", "name": "Bayou City Restoration", "phone": "+17135550310", "licensed": True},
+    {"id": "K3", "name": "Lone Star Roof & Siding", "phone": "+17135550422", "licensed": True},
+    {"id": "K4", "name": "Coastal Home Repair", "phone": "+17135550533", "licensed": True},
+]
+PERIL_TEXT = {
+    "minor": ("Flood: water in kitchen and garage", "Water damage to flooring and lower cabinets"),
+    "major": ("Flood + wind", "Water to 2 ft inside, drywall and flooring out, roof shingles missing"),
+    "total": ("Flood", "Water above 4 ft inside the home, structure and contents a total loss"),
+}
+
+
+def damage_for_depth(depth, rng):
+    """Seeded 'simulated damage assessment' label. Mostly follows flood depth, with some noise."""
+    if depth < 1.5:
+        return "minor"
+    if depth < 3.5:
+        return rng.choice(["minor", "major", "major"])
+    return rng.choice(["major", "major", "total"])
+
+
+def _photo_set(kind, damage=None):
+    pre = [{"phase": "pre", "url": "/photos/house-pre.svg", "label": "Home, front (pre-storm)"},
+           {"phase": "pre", "url": "/photos/car-pre.svg", "label": "Car (pre-storm)"}]
+    if kind == "pre":
+        return pre
+    return [{"phase": "post", "url": f"/photos/house-{damage}.svg", "label": f"Home, front (after): {damage}"}]
+
+
+def _reyes(block):
+    s, w, n, e = block["bounds"]
+    return {
+        "id": REYES_ID,
+        "name": "Ana & Rosa Reyes",
+        "address": "1418 Magnolia St",
+        "lat": round((s + n) / 2 - 0.0012, 6),
+        "lng": round((w + e) / 2 + 0.0010, 6),
+        "block_id": block["id"],
+        "phone": REYES_PHONE,
+        "language": "es",
+        "source": "policyholder",
+        "consent": True,
+        "policy_number": "SF-20481918",
+        "members": [{"age": 34, "name": "Ana"}, {"age": 71, "name": "Rosa", "oxygen": True}],
+        "pets": False,
+        "home": {"value": 215000, "roof_age": 22, "shutters": False, "construction": "wood frame"},
+        "vehicles": [{"year": 2019, "type": "sedan", "value": 19500}],
+        "photos": _photo_set("pre"),
+        "actions": [],
+    }
+
+
+def _business(rng, households, blocks, blocks_by_id, claims):
+    # Homes, cars and pre-storm photos for everyone we know about.
+    for h in households:
+        if h["source"] == "census_estimate":
+            h.update({"home": {"value": rng.randint(110, 260) * 1000, "roof_age": rng.randint(3, 35),
+                               "shutters": False, "construction": "unknown"}, "vehicles": [], "photos": [],
+                      "actions": []})
+            continue
+        h["home"] = {"value": rng.randint(140, 420) * 1000, "roof_age": rng.randint(2, 30),
+                     "shutters": rng.random() < 0.3, "construction": rng.choice(["wood frame", "brick", "wood frame"])}
+        h["vehicles"] = [{"year": rng.randint(2010, 2025), "type": rng.choice(["sedan", "SUV", "pickup"]),
+                          "value": rng.randint(8, 38) * 1000} for _ in range(rng.choice([0, 1, 1, 2]))]
+        h["photos"] = _photo_set("pre") if h.get("policy_number") and rng.random() < 0.5 else []
+        h["actions"] = []
+
+    # The demo family lives in the deepest block other than the planted quiet one.
+    deep = max((b for b in blocks if b["id"] != FLAGGED_BLOCK), key=lambda b: b["flood_depth_ft"])
+    reyes = _reyes(deep)
+    households.append(reyes)
+
+    by_id = {h["id"]: h for h in households}
+    n = 1000
+
+    def claim_fields(h, damage, estimate, fnol_t, contractor=None, aob_t=None):
+        nonlocal n
+        n += 1 + (n + 1 == 1042)  # DEMO-1042 is reserved for the Reyes family (demo script)
+        peril, dmg = PERIL_TEXT[damage]
+        return {"claim_number": f"DEMO-{n}", "fnol_t": round(fnol_t, 1),
+                "fnol": {"date_of_loss": "landfall (T+0)", "peril": peril, "damage": dmg,
+                         "injuries": "none reported", "temp_housing": damage != "minor", "photos": []},
+                "estimate": int(estimate), "damage_label": damage, "contractor_id": contractor,
+                "aob_signed_t": aob_t, "paid_t": None, "paid_amount": None,
+                "photos": [p for p in h.get("photos", [])] + _photo_set("post", damage)}
+
+    def estimate_for(damage):
+        return {"minor": rng.randint(9, 24) * 100, "major": rng.randint(60, 240) * 100,
+                "total": rng.randint(300, 900) * 100}[damage]
+
+    # Legacy claims (During tab's fraud examples) get recovery fields too.
+    for c in claims:
+        h = by_id[c["household_id"]]
+        depth = blocks_by_id[h["block_id"]]["flood_depth_ft"]
+        damage = "minor" if c["planted"] else damage_for_depth(depth, rng)
+        est = 2100 if c["planted"] else estimate_for(damage)
+        c.update(claim_fields(h, damage, est, rng.uniform(600, 1800)))
+
+    # New recovery claims from policyholders in flooded blocks.
+    taken = {c["household_id"] for c in claims} | {REYES_ID, "H-DUP"}
+    pool = [h for h in households if h.get("policy_number") and h["id"] not in taken
+            and blocks_by_id[h["block_id"]]["flood_depth_ft"] > 0]
+    picks = rng.sample(pool, min(40, len(pool)))
+    for i, h in enumerate(picks):
+        depth = blocks_by_id[h["block_id"]]["flood_depth_ft"]
+        if i < 9:  # Gulf Rapid Roofing: benefits signed ~6h after landfall, estimates padded ~2.3x
+            damage = rng.choice(["minor", "major", "major"])
+            fields = claim_fields(h, damage, estimate_for(damage) * 2.3, rng.uniform(900, 2700), "K1",
+                                  round(360 + rng.uniform(-30, 45), 1))
+        elif i < 17:  # licensed contractors, signed days after the claim was filed
+            damage = damage_for_depth(depth, rng)
+            fnol_t = rng.uniform(1500, 2300)
+            fields = claim_fields(h, damage, estimate_for(damage), fnol_t, rng.choice(["K2", "K3", "K4"]),
+                                  round(fnol_t + rng.uniform(150, 450), 1))
+        else:
+            damage = damage_for_depth(depth, rng)
+            if rng.random() < 0.35:
+                damage = "minor"  # plenty of small claims so auto-pay has work to do
+            fields = claim_fields(h, damage, estimate_for(damage), rng.uniform(300, 2820))
+        claims.append({"id": f"C-{h['id']}", "household_id": h["id"], "status": "filed", "planted": None, **fields})
+
+    # Reyes: minor, $1,840, pre-storm photos on file, no contractor → auto-pay.
+    rc = {"id": f"C-{REYES_ID}", "household_id": REYES_ID, "status": "filed", "planted": None,
+          **claim_fields(reyes, "minor", 1840, 2820)}
+    rc["claim_number"] = "DEMO-1042"
+    rc["fnol"]["damage"] = "Water in kitchen and garage (~4 in); flooring and lower cabinets"
+    claims.append(rc)
+    return CONTRACTORS

@@ -42,3 +42,59 @@ def test_phase_jumps():
         assert r["phase"] == phase and at <= r["now"] < at + 10
         assert c.get("/api/state").json()["event_phase"] == phase
     assert c.post("/api/phase", json={"phase": "later"}).status_code == 422
+
+
+def _thread(phone="+17135550188"):
+    return [m["body"] for m in c.get("/api/thread", params={"phone": phone}).json()["messages"]]
+
+
+def test_reyes_journey_before_during_after():
+    c.post("/api/scenario/start", json={"phase": "before"})
+    ex = c.get("/api/exposure").json()
+    assert ex["totals"]["policies"] > 100 and ex["totals"]["expected_loss"] > 0
+    assert any(h["demo"] for h in ex["homes"])
+
+    # Before: action text in Spanish, reply 1 confirms the car.
+    assert c.post("/api/before/send_actions").json()["sent"] > 50
+    assert "Responda 1" in _thread()[-1]
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "1"})
+    assert _thread()[-1].startswith("¡Gracias!")
+    acts = {a["type"]: a for a in services.db.get("households", "H-REYES")["actions"]}
+    assert acts["car"]["confirmed_t"] is not None and acts["meds"]["confirmed_t"] is None
+    assert c.get("/api/scorecard").json()["avoided_by_type"]["car"] > 10000
+
+    # During: the Spanish oxygen text puts the family at the top of the queue.
+    c.post("/api/phase", json={"phase": "during"})
+    c.post("/api/outreach/checkin_all")
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "el agua está entrando, mi mamá usa oxígeno"})
+    q = c.get("/api/state").json()["queue"]
+    assert q[0]["id"] == "H-REYES", [(x["name"], x["score"]) for x in q[:3]]
+
+    # After: $1,840 minor claim lands in auto-pay, gets paid, and the family gets a text.
+    c.post("/api/phase", json={"phase": "after"})
+    lanes = c.get("/api/recovery/claims").json()["lanes"]
+    reyes = next(x for x in lanes["autopay"] if x["household_id"] == "H-REYES")
+    assert reyes["estimate"] == 1840 and reyes["claim_number"] == "DEMO-1042" and not reyes["flags"]
+    assert c.post("/api/recovery/run_autopay").json()["paid"] >= 1
+    assert "aprobado" in _thread()[-1] and "$1,840" in _thread()[-1]
+    sc = c.get("/api/scorecard").json()
+    assert sc["cycle_time_days"] < sc["cycle_baseline_days"] and sc["cost_per_claim"] < sc["cost_baseline"]
+
+
+def test_gulf_rapid_roofing_flagged_and_routed_to_field():
+    c.post("/api/scenario/start", json={"phase": "after"})
+    ks = c.get("/api/contractors").json()
+    assert ks[0]["name"] == "Gulf Rapid Roofing" and len(ks[0]["claims"]) == 9 and len(ks[0]["flags"]) == 4
+    lanes = c.get("/api/recovery/claims").json()["lanes"]
+    grr = [x for lane in lanes.values() for x in lane if x["contractor"] == "Gulf Rapid Roofing"]
+    assert len(grr) == 9 and all(x["lane"] == "field" for x in grr)
+    assert all(not x["flags"] for x in lanes["autopay"])
+    assert c.post("/api/claims/" + grr[0]["id"] + "/autopay").status_code == 409
+
+
+def test_cone_narrows():
+    c.post("/api/scenario/start", json={"phase": "before"})
+    wide = c.get("/api/exposure").json()["totals"]["households"]
+    clock.jump(-20 * 60)
+    narrow = c.get("/api/exposure").json()["totals"]["households"]
+    assert narrow < wide

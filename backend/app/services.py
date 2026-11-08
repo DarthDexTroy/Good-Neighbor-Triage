@@ -25,11 +25,13 @@ def save_meta(m):
 # ---------- scenario ----------
 
 def start_scenario(phase: str = "during"):
-    from . import simulator
+    from . import business, simulator
     simulator.stop()
+    business.stop_sim()
     db.reset()
     stats = seed.seed()
     clock.start(clock.PHASE_AT[phase])
+    business.backfill_autopay()
     save_meta({"id": "scenario", "phase": "flood", "outreach_at": None, "sweeps": {}})
     audit("system", f"Storm scenario started at {clock.fmt(clock.now())}: "
                     f"{stats['in_zone']} households in the forecast flood zone")
@@ -103,9 +105,12 @@ def record_inbound(household, text, channel="sms", lat=None, lng=None):
 
 
 def handle_inbound(phone, text, channel="sms", lat=None, lng=None, use_llm=True):
-    from . import agent
+    from . import agent, business
     h = find_or_create_household(phone)
     record_inbound(h, text, channel, lat, lng)
+    # Before landfall, "1" / "2" / "3" / a photo confirm a pre-storm action instead of starting triage.
+    if clock.phase_of(clock.now()) == "before" and business.is_action_reply(h, text):
+        return {"engine": "actions", "confirmed": business.handle_action_reply(db.get("households", h["id"]), text)}
     return agent.run(h["id"], phone, text, use_llm=use_llm)
 
 
@@ -239,7 +244,7 @@ def sweep(block_id, actor="cat team"):
 def claims_view():
     households = {h["id"]: h for h in db.all_docs("households")}
     blocks = {b["id"]: b for b in db.all_docs("blocks")}
-    all_claims = db.all_docs("claims")
+    all_claims = [c for c in db.all_docs("claims") if c.get("status") == "draft"]  # During-phase drafts
     out = []
     for c in all_claims:
         h = households[c["household_id"]]
