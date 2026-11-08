@@ -38,7 +38,13 @@ backend/.venv/bin/python -m pytest -q backend                       # 18 tests
     - **Inbound:** a poller in `app/photon.py` reads received iMessages every 2 s, so no tunnel is needed.
     - **Outbound:** `messenger.PhotonMessenger.send` posts to `POST /v1/projects/{id}/messages`.
     - Unit-tested with a sample message. **Not tested against the live API.**
-  - **To turn Photon on:**
+  - **We're on Photon stable (Spectrum, app.photon.codes).** Project `good-neighbor` exists. Spectrum is a TypeScript SDK, so `photon-bridge/` (Node, `npm start`) connects it to the Python backend:
+    - inbound iMessage → `POST /api/photon/inbound`
+    - backend sends → `POST localhost:8787/send` → the person's conversation
+    - Setup: put `SPECTRUM_PROJECT_SECRET` in `photon-bridge/.env`; `backend/.env` needs `PHOTON_BRIDGE_URL=http://localhost:8787` and `DEMO_FAMILY_PHONE`.
+    - Photon also needs a phone on the account (avatar menu).
+    - Bridge health check: `curl localhost:8787/health`
+  - **Alternative: Photon 2.0 beta REST** (only if we switch dashboards):
     1. Sign up at app.beta.photon.codes (free month, per the HackUTD credits page).
     2. Create a project and an API key with `project:read` + `project:write`.
     3. In the iMessage section, add your iPhone number and assign a shared line.

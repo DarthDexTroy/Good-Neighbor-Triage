@@ -75,9 +75,17 @@ def checkin_all():
 
 # ---------- households / messages ----------
 
+def _digits(phone):
+    return "".join(ch for ch in str(phone) if ch.isdigit())[-10:]
+
+
 def find_or_create_household(phone: str) -> dict:
     for h in db.all_docs("households"):
         if h.get("phone") == phone:
+            return h
+    # iMessage handles may arrive without +1 or with formatting: match on the last 10 digits.
+    for h in db.all_docs("households"):
+        if h.get("phone") and len(_digits(phone)) == 10 and _digits(h["phone"]) == _digits(phone):
             return h
     # Deepest-water block other than the planted quiet one, so the live demo case is clearly in danger.
     b = max((x for x in db.all_docs("blocks") if x["id"] != seed.FLAGGED_BLOCK), key=lambda x: x["flood_depth_ft"])

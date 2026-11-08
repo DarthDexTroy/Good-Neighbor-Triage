@@ -107,7 +107,7 @@ def status():
 
 def start():
     global _thread
-    if not config.photon_configured() or (_thread and _thread.is_alive()):
+    if not config.photon_rest_configured() or (_thread and _thread.is_alive()):
         return
     _stop.clear()
     _thread = threading.Thread(target=_run, daemon=True)
