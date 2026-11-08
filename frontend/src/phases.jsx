@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { CircleMarker, MapContainer, Polygon, Rectangle, TileLayer, Tooltip } from 'react-leaflet'
-import { api } from './api'
+import { api, assetUrl } from './api'
 
 const CENTER = [29.76, -95.37]
 const usd = (n) => (n == null ? '-' : `$${Math.round(n).toLocaleString()}`)
@@ -293,7 +293,7 @@ function ClaimCard({ c, onPay }) {
           <div className="flex gap-1.5">
             {c.photos.map((p) => (
               <figure key={p.url + p.label} className="w-1/3">
-                <img src={p.url} alt={p.label} className="w-full rounded border border-slate-700" />
+                <img src={assetUrl(p.url)} alt={p.label} className="w-full rounded border border-slate-700" />
                 <figcaption className="text-[9px] text-slate-400">{p.phase === 'pre' ? 'Before' : 'After'}: {p.label}</figcaption>
               </figure>
             ))}

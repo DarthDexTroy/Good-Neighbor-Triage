@@ -1,5 +1,23 @@
+/**
+ * Where the backend lives. Local dev: same origin (Vite proxies /api). On GitHub Pages: read from
+ * config.json next to the page ({"apiBase": "https://….trycloudflare.com"}), so a new tunnel URL only
+ * needs that one file updated. ?api=<url> overrides both (handy when testing a new tunnel).
+ */
+const apiBase = (async () => {
+  const q = new URLSearchParams(window.location.search).get('api')
+  if (q) return q.replace(/\/$/, '')
+  try {
+    const r = await fetch(`${import.meta.env.BASE_URL}config.json`, { cache: 'no-store' })
+    if (r.ok) return ((await r.json()).apiBase || '').replace(/\/$/, '')
+  } catch { /* no config.json: same origin */ }
+  return ''
+})()
+
+/** Static files (seeded photos) live with the frontend, under Vite's base path. */
+export const assetUrl = (path) => (path?.startsWith('/') ? `${import.meta.env.BASE_URL}${path.slice(1)}` : path)
+
 async function req(method, path, body) {
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${await apiBase}/api${path}`, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,
@@ -38,7 +56,7 @@ export const api = {
 /** Which contract endpoints the backend has so far (teammate builds some of them in parallel). */
 export async function detectFeatures() {
   try {
-    const spec = await (await fetch('/openapi.json')).json()
+    const spec = await (await fetch(`${await apiBase}/openapi.json`)).json()
     const paths = Object.keys(spec.paths || {})
     return {
       clockAdvance: paths.includes('/api/clock/advance'),
