@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 160" width="240" height="160">
+<rect width="240" height="160" fill="#cbd5e1"/><rect y="118" width="240" height="42" fill="#86efac"/>
+<rect x="70" y="70" width="100" height="50" fill="#fef3c7" stroke="#78350f"/>
+<polygon points="62,72 120,36 178,72" fill="#b91c1c" stroke="#78350f"/>
+<rect x="110" y="92" width="20" height="28" fill="#92400e"/>
+<rect x="80" y="82" width="20" height="16" fill="#e0f2fe" stroke="#78350f"/><rect x="142" y="82" width="20" height="16" fill="#e0f2fe" stroke="#78350f"/><rect x="0" y="112" width="240" height="48" fill="#78716c" opacity="0.55"/><line x1="70" y1="112" x2="170" y2="112" stroke="#57534e" stroke-width="2"/>
+<rect x="0" y="140" width="240" height="20" fill="rgba(15,23,42,.75)"/>
+<text x="8" y="154" font-family="sans-serif" font-size="11" fill="#fff">After: minor (water line ~4 in)</text>
+<text x="232" y="14" text-anchor="end" font-family="sans-serif" font-size="9" fill="#334155">PLACEHOLDER · simulated</text>
+</svg>

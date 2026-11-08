@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from './api'
 import MapView from './MapView'
 import { ClaimsPanel, QueuePanel, SilencePanel, TracePanel } from './panels'
+import { AfterView, BeforeView, PhaseBanner, PhoneSim } from './phases'
 
 const TABS = [
   ['queue', 'Priority queue'],
@@ -9,7 +10,9 @@ const TABS = [
   ['trace', 'Agent trace'],
   ['claims', 'Claims'],
 ]
-const JUDGE_TEXT = 'water coming in, my mom is on oxygen and the power is out'
+const JUDGE_TEXT = 'el agua está entrando, mi mamá usa oxígeno'
+const REYES_PHONE = '+17135550188'
+const PHASES = [['before', 'Before', 'T−72h → landfall'], ['during', 'During', 'landfall → T+48h'], ['after', 'After', 'T+48h → claims']]
 
 function Kpi({ label, value, accent }) {
   return (
@@ -37,7 +40,7 @@ export default function App() {
   const [error, setError] = useState(null)
   const [jumps, setJumps] = useState({})
   const [textOpen, setTextOpen] = useState(false)
-  const [phone, setPhone] = useState('+15125550199')
+  const [phone, setPhone] = useState(REYES_PHONE)
   const [text, setText] = useState(JUDGE_TEXT)
   const prevRanks = useRef({})
 
@@ -85,9 +88,11 @@ export default function App() {
     if (p) setFlyTarget([p.lat, p.lng])
   }
 
-  if (!state) return <div className="grid h-full place-items-center text-slate-400">{error || 'Connecting to Lifeline…'}</div>
+  if (!state) return <div className="grid h-full place-items-center text-slate-400">{error || 'Connecting to Good Neighbor Triage…'}</div>
   const c = state.counts
   const started = state.phase !== 'idle'
+  const phase = state.event_phase || 'before'
+  const goPhase = (p) => run(async () => { await api.phase(p); setState(await api.state()) })
 
   return (
     <div className="flex h-full flex-col">
@@ -95,12 +100,21 @@ export default function App() {
         <div className="mr-2">
           <div className="flex items-center gap-2">
             <span className="h-3 w-3 rounded-full bg-sf-red" />
-            <span className="text-lg font-extrabold tracking-tight">Lifeline</span>
-            <span className="text-xs text-slate-400">State Farm Catastrophe Response</span>
+            <span className="text-lg font-extrabold tracking-tight">Good Neighbor Triage</span>
+            <span className="text-xs text-slate-400">catastrophe response concept</span>
           </div>
-          <div className="text-[11px] text-slate-500">Houston flash flood · <b>simulated data</b> · {state.clock}</div>
+          <div className="text-[11px] text-slate-500">Houston hurricane flood · <b>simulated data</b> · {state.clock}</div>
         </div>
-        {started && (
+        <nav className="flex overflow-hidden rounded-lg border border-slate-700">
+          {PHASES.map(([id, label, sub]) => (
+            <button key={id} onClick={() => goPhase(id)}
+              className={`px-4 py-1 text-left ${started && phase === id ? 'bg-sf-red text-white' : 'text-slate-300 hover:bg-slate-800'}`}>
+              <div className="text-sm font-bold">{label}</div>
+              <div className="text-[10px] opacity-75">{sub}</div>
+            </button>
+          ))}
+        </nav>
+        {started && phase === 'during' && (
           <div className="flex flex-wrap gap-2">
             <Kpi label="In flood zone" value={c.in_zone} />
             <Kpi label="Replied" value={`${c.replied}/${c.contacted}`} />
@@ -115,20 +129,27 @@ export default function App() {
             <Badge on={state.config.nemotron} label="Nemotron" onText="live" offText="rules fallback" />
             <Badge on={state.config.photon} label="Photon" onText="live" offText="mock" />
           </div>
-          <button onClick={() => run(api.start)}
+          <button onClick={() => run(() => api.start('before'))}
             className="rounded border border-slate-600 px-3 py-1.5 text-sm font-semibold hover:bg-slate-800">
             {started ? 'Restart scenario' : 'Start scenario'}
           </button>
-          <button disabled={!started || state.outreach_at != null} onClick={() => run(api.checkinAll)}
-            className="rounded bg-sf-red px-3 py-1.5 text-sm font-semibold hover:bg-sf-dark disabled:opacity-40">
-            Check in all
-          </button>
+          {phase === 'during' && (
+            <button disabled={!started || state.outreach_at != null} onClick={() => run(api.checkinAll)}
+              className="rounded bg-sf-red px-3 py-1.5 text-sm font-semibold hover:bg-sf-dark disabled:opacity-40">
+              Check in all
+            </button>
+          )}
         </div>
       </header>
 
       {error && <div className="bg-red-950 px-4 py-1.5 text-sm text-red-200">{error} <button className="ml-2 underline" onClick={() => setError(null)}>dismiss</button></div>}
 
-      <main className="flex min-h-0 flex-1">
+      {started && <PhaseBanner state={state} />}
+
+      {started && phase === 'before' && <BeforeView state={state} onError={setError} />}
+      {started && phase === 'after' && <AfterView state={state} onError={setError} />}
+
+      {(!started || phase === 'during') && <main className="flex min-h-0 flex-1">
         <section className="relative min-w-0 flex-1">
           <MapView state={state} showSilence={showSilence} selectedId={selectedId} onSelect={select} flyTarget={flyTarget} />
           <div className="absolute left-3 top-3 z-[1000] flex flex-col gap-2">
@@ -144,26 +165,6 @@ export default function App() {
               ))}
             </div>
             <div className="mt-1 text-slate-500">Blue = flood depth · ◯ green ring = shelter · ◯ white ring = team</div>
-          </div>
-          <div className="absolute bottom-3 right-3 z-[1000] w-80">
-            {textOpen ? (
-              <div className="rounded-lg border border-slate-700 bg-slate-900/95 p-3 shadow-xl">
-                <div className="mb-2 flex items-center justify-between text-xs font-semibold text-slate-300">
-                  Simulate an inbound text (rehearsal)
-                  <button onClick={() => setTextOpen(false)} className="text-slate-500">✕</button>
-                </div>
-                <input value={phone} onChange={(e) => setPhone(e.target.value)}
-                  className="mb-2 w-full rounded bg-slate-800 px-2 py-1 text-sm" placeholder="+1..." />
-                <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3}
-                  className="mb-2 w-full rounded bg-slate-800 px-2 py-1 text-sm" />
-                <button disabled={!started} onClick={() => run(async () => { await api.inbound(phone, text); setTab('trace') })}
-                  className="w-full rounded bg-sf-red py-1.5 text-sm font-semibold disabled:opacity-40">Send as text</button>
-              </div>
-            ) : (
-              <button onClick={() => setTextOpen(true)} className="float-right rounded-lg bg-slate-900/90 px-3 py-1.5 text-xs text-slate-300 shadow">
-                💬 Simulate a text
-              </button>
-            )}
           </div>
         </section>
 
@@ -184,7 +185,11 @@ export default function App() {
             {tab === 'claims' && <ClaimsPanel />}
           </div>
         </aside>
-      </main>
+      </main>}
+      {started && (
+        <PhoneSim open={textOpen} setOpen={setTextOpen} phone={phone} setPhone={setPhone} text={text} setText={setText}
+          phase={phase} onSend={(t) => run(async () => { await api.inbound(phone, t ?? text); if (phase === 'during') setTab('trace') })} />
+      )}
     </div>
   )
 }

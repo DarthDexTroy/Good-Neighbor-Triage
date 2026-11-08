@@ -256,7 +256,7 @@ def _reyes(block):
         "source": "policyholder",
         "consent": True,
         "policy_number": "SF-20481918",
-        "members": [{"age": 34, "name": "Ana"}, {"age": 71, "name": "Rosa", "oxygen": True}],
+        "members": [{"age": 34, "name": "Ana"}, {"age": 71, "name": "Rosa", "oxygen": True, "mobility": True}],
         "pets": False,
         "home": {"value": 215000, "roof_age": 22, "shutters": False, "construction": "wood frame"},
         "vehicles": [{"year": 2019, "type": "sedan", "value": 19500}],

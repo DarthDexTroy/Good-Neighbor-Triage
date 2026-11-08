@@ -3,9 +3,9 @@ from . import claims as claims_mod
 from . import clock, db, geo, messenger, scoring, seed, silence
 
 CHECKIN_TEXT = {
-    "en": "State Farm Lifeline: flooding reported near you. Reply SAFE, HELP, or tell us what you need. "
+    "en": "Good Neighbor here: flooding reported near you. Reply SAFE, HELP, or tell us what you need. "
           "If in immediate danger call 911.",
-    "es": "State Farm Lifeline: se reportan inundaciones cerca de usted. Responda BIEN, AYUDA, o díganos qué "
+    "es": "Good Neighbor: se reportan inundaciones cerca de usted. Responda BIEN, AYUDA, o díganos qué "
           "necesita. Si está en peligro inmediato llame al 911.",
 }
 
