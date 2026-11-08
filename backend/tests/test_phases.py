@@ -148,3 +148,10 @@ def test_language_picker():
     assert _thread()[-1].startswith("Thanks! Marked done: car moved")
     c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "Español"})
     assert db.get("households", "H-REYES")["language"] == "es"
+
+
+def test_language_pick_not_repeated_after_choice():
+    c.post("/api/scenario/start", json={"phase": "before"})
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "EN"})
+    c.post("/api/dev/inbound", json={"phone": "+17135550188", "text": "ok thanks"})
+    assert "Reply EN" not in _thread()[-1] and _thread()[-1].startswith("LifeLine: you're set")

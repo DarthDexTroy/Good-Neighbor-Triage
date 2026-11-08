@@ -155,7 +155,7 @@ def handle_inbound(phone, text, channel="sms", lat=None, lng=None, use_llm=True)
         es = h.get("language") == "es"
         messenger.deliver(h, ("LifeLine: listo. Le avisaremos aquí si una tormenta se acerca a su casa. "
                               if es else "LifeLine: you're set. We'll text you here if a storm heads your way. ")
-                          + LANG_PICK)
+                          + ("" if h.get("language_chosen") else LANG_PICK))
         return {"engine": "optin"}
     return agent.run(h["id"], phone, text, use_llm=use_llm)
 
