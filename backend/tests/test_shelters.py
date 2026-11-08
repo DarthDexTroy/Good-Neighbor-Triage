@@ -52,7 +52,7 @@ def test_shelter_detail_accept_and_meds():
     assert c.post(f"/api/shelters/{sid}/meds/{med['id']}/given").json() == {"ok": True}
 
     texts = [m["body"] for m in c.get(f"/api/cases/{h['id']}/messages").json() if m["direction"] == "out"]
-    assert any(t.startswith("LifeLine") for t in texts)
+    assert any(t.startswith("Good Neighbor here") for t in texts)
 
 
 def test_unknown_ids_404():

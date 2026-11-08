@@ -20,9 +20,9 @@ SUPPLY_BASE = [("Water (cases)", 140, 40), ("Meals (MREs)", 260, 80), ("Blankets
                ("Insulin (vials)", 9, 5), ("Phone chargers", 30, 10)]
 
 ACCEPT_TEXT = {
-    "en": "LifeLine: {shelter} has a spot for you. Show this text at the door. "
+    "en": "Good Neighbor here: {shelter} has a spot for you. Show this text at the door. "
           "If in immediate danger call 911.",
-    "es": "LifeLine: {shelter} tiene lugar para usted. Muestre este mensaje en la entrada. "
+    "es": "Good Neighbor: {shelter} tiene lugar para usted. Muestre este mensaje en la entrada. "
           "Si está en peligro inmediato llame al 911.",
 }
 
