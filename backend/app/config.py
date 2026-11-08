@@ -9,7 +9,9 @@ SIM_SPEED = float(os.getenv("SIM_SPEED", "60"))
 
 NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
-NEMOTRON_MODEL = os.getenv("NEMOTRON_MODEL", "")
+NEMOTRON_MODEL = os.getenv("NEMOTRON_MODEL", "") or "nvidia/nemotron-3.5-super-vl-120b-a12b"
+# Off by default: "thinking" adds seconds before the first tool call, and the live text demo needs speed.
+NEMOTRON_THINKING = os.getenv("NEMOTRON_THINKING", "0") == "1"
 
 PHOTON_API_KEY = os.getenv("PHOTON_API_KEY", "")          # project API key, pho_sk_...
 PHOTON_PROJECT_ID = os.getenv("PHOTON_PROJECT_ID", "")    # pho_prj_...

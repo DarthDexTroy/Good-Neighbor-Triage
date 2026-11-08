@@ -177,7 +177,9 @@ def run_nemotron(household_id, phone, text):
                 {"role": "user", "content": f"Inbound text from {phone} at {clock.fmt(clock.now())}:\n\"{text}\""}]
     for _ in range(MAX_STEPS):
         resp = client.chat.completions.create(model=config.NEMOTRON_MODEL, messages=messages, tools=TOOLS,
-                                              tool_choice="auto", temperature=0.2, max_tokens=1024)
+                                              tool_choice="auto", temperature=0.2, max_tokens=1024,
+                                              extra_body={"chat_template_kwargs":
+                                                          {"enable_thinking": config.NEMOTRON_THINKING}})
         msg = resp.choices[0].message
         if not msg.tool_calls:
             break
