@@ -25,11 +25,6 @@ class PhotonMessenger:
         import uuid
 
         import httpx
-        if config.PHOTON_BRIDGE_URL:  # Photon stable via photon-bridge/ (Spectrum SDK)
-            r = httpx.post(f"{config.PHOTON_BRIDGE_URL}/send", json={"to": to, "text": text}, timeout=20)
-            if r.status_code >= 300:
-                raise RuntimeError(f"Photon bridge {r.status_code}: {r.text[:200]}")
-            return
         space = self._space(to)
         if not space:
             raise RuntimeError(f"No Photon conversation with {to[-4:]} yet: they must text the agent number first")
