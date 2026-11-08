@@ -24,15 +24,26 @@ def save_meta(m):
 
 # ---------- scenario ----------
 
-def start_scenario():
+def start_scenario(phase: str = "during"):
     from . import simulator
     simulator.stop()
     db.reset()
     stats = seed.seed()
-    clock.start()
+    clock.start(clock.PHASE_AT[phase])
     save_meta({"id": "scenario", "phase": "flood", "outreach_at": None, "sweeps": {}})
-    audit("system", f"Flood scenario started: {stats['in_zone']} households in the hazard zone")
-    return stats
+    audit("system", f"Storm scenario started at {clock.fmt(clock.now())}: "
+                    f"{stats['in_zone']} households in the forecast flood zone")
+    return {**stats, "now": clock.now(), "event_phase": clock.phase_of(clock.now())}
+
+
+def set_phase(phase: str):
+    """Jump simulated time to the start of a phase: before = T−72h, during = landfall, after = T+48h."""
+    if meta()["phase"] == "idle":
+        start_scenario(phase)
+    else:
+        clock.jump(clock.PHASE_AT[phase])
+    audit("cat team", f"Jumped to {phase} phase ({clock.fmt(clock.now())})")
+    return {"now": clock.now(), "clock": clock.fmt(clock.now()), "phase": phase}
 
 
 def checkin_all():

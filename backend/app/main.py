@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -11,6 +13,14 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 class DevInbound(BaseModel):
     phone: str
     text: str
+
+
+class PhaseBody(BaseModel):
+    phase: Literal["before", "during", "after"]
+
+
+class StartBody(BaseModel):
+    phase: Literal["before", "during", "after"] = "during"
 
 
 class AssignBody(BaseModel):
@@ -28,8 +38,14 @@ def health():
 
 
 @app.post("/api/scenario/start")
-def start_scenario():
-    return services.start_scenario()
+def start_scenario(body: StartBody | None = None):
+    return services.start_scenario((body or StartBody()).phase)
+
+
+@app.post("/api/phase")
+def set_phase(body: PhaseBody):
+    """Jump simulated time: before → T−72h, during → landfall (T+0), after → T+48h."""
+    return services.set_phase(body.phase)
 
 
 @app.post("/api/outreach/checkin_all")
@@ -117,7 +133,8 @@ def state():
         q.pop("_activity")
 
     return {
-        "now": now, "clock": clock.fmt(now), "phase": m["phase"], "outreach_at": m.get("outreach_at"),
+        "now": now, "clock": clock.fmt(now), "phase": m["phase"],
+        "event_phase": clock.phase_of(now) if m["phase"] != "idle" else None, "outreach_at": m.get("outreach_at"),
         "sweeps": m.get("sweeps", {}),
         "config": {"demo_mode": config.DEMO_MODE, "nemotron": config.llm_configured(),
                    "photon": config.photon_configured()},

@@ -81,11 +81,12 @@ def compute(needs: dict, depth_ft: float, block_power_out: bool, status: str, da
 
     if depth_ft > 0 and last_reply_at is None:
         if not reachable:
-            hours = now / 60
+            hours = max(0.0, now / 60)  # clock is negative before landfall
             pts = min(20, int(hours * 4))
-            add(pts, f"No way to contact (census estimate), {hours:.1f}h since flood")
+            if pts:
+                add(pts, f"No way to contact (census estimate), {hours:.1f}h since flood")
         elif outreach_at is not None:
-            hours = (now - outreach_at) / 60
+            hours = max(0.0, (now - outreach_at) / 60)
             pts = min(20, int(hours * 4))
             if pts:
                 add(pts, f"No reply for {hours:.1f}h")
