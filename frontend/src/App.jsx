@@ -69,6 +69,7 @@ export default function App() {
           }), 4000)
         }
         setState(s)
+        setError((e) => (e && e.startsWith("Can't reach the backend") ? null : e))  // clear once it's back
         if (s.config?.demo_phone && !demoPhoneSet.current) { demoPhoneSet.current = true; setPhone(s.config.demo_phone) }
       } catch (e) {
         if (alive) setError(`Can't reach the backend: ${e.message}`)
